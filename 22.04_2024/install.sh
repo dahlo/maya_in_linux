@@ -31,9 +31,8 @@ sudo apt-get install ./maya2024-64_2024.0-4641_amd64.deb
 sudo /opt/Autodesk/AdskLicensing/Current/helper/AdskLicensingInstHelper register -pk 657P1 -pv 2024.0.0.F -el EN_US -cf /var/opt/Autodesk/Adlm/Maya2024/MayaConfig.pit
 
 # get and install libXp6
-sudo add-apt-repository ppa:zeehio/libxp
-sudo apt-get update
-sudo apt-get install libxp6
+wget https://launchpad.net/~zeehio/+archive/ubuntu/libxp/+files/libxp6_1.0.2-2ubuntu1~22.04_amd64.deb
+sudo apt-get install ./libxp6_1.0.2-2ubuntu1~22.04_amd64.deb
 
 # add additional dependencies
 sudo apt-get install libfam0 libcurl4 libpcre16-3 libjpeg62 libxm4 libgdbm-compat4 libmng2 libaudiofile-dev xfonts-100dpi xfonts-75dpi
