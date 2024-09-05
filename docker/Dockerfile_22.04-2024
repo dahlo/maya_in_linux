@@ -1,0 +1,116 @@
+FROM nvidia/cuda:12.4.0-runtime-ubuntu22.04
+#FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# update system before starting
+RUN apt update ; apt upgrade -y
+
+RUN apt install -y wget
+
+
+RUN mkdir /install
+WORKDIR /install
+
+# download maya 2024, link from https://github.com/tahv/docker-mayapy/blob/main/2024/Dockerfile
+RUN wget --no-check-certificate -O maya.tgz https://efulfillment.autodesk.com/NetSWDLD/2024/MAYA/537B71D7-A391-3E25-93C3-9967181B3F34/ESD/Autodesk_Maya_2024_Linux_64bit.tgz 
+
+# unpack
+RUN tar -xzvf maya.tgz
+
+RUN apt install -y alien dpkg-dev debhelper build-essential zlib1g-dev
+
+# convert rpms to deb
+WORKDIR /install/Packages
+#WORKDIR /install/Packages
+RUN alien -vc *.rpm
+
+# install licensing, according to https://www.autodesk.com/support/technical/article/caas/tsarticles/ts/4EQDDcHqJbfBkQr3i0FrbQ.html
+RUN apt-get install ./adlmapps28_28.0.11-1_amd64.deb
+RUN apt-get install ./adskflexnetserveripv6_11.18.0-1_amd64.deb
+RUN apt-get install ./adskflexnetclient_11.18.0-1_amd64.deb
+RUN apt-get install ./adsklicensing13.0.0.8122_0-1_amd64.deb
+
+
+RUN echo 'root:root' | chpasswd
+RUN printf '#!/bin/sh\nexit 0' > /usr/sbin/policy-rc.d
+RUN apt-get update
+RUN apt-get install -y systemd systemd-sysv dbus dbus-user-session
+RUN printf "systemctl start systemd-logind" >> /etc/profile
+ENTRYPOINT ["/sbin/init"]
+
+# check that the license server is running
+#RUN systemctl status adsklicensing
+
+# install maya
+RUN /usr/bin/AdskLicensingService --start  ; apt-get install ./maya2024-64_2024.0-4641_amd64.deb
+
+# check if it is registered in the license server
+RUN (/usr/bin/AdskLicensingService --run &) && /opt/Autodesk/AdskLicensing/Current/helper/AdskLicensingInstHelper list
+
+RUN apt install -y libgl1-mesa-glx
+# add it manually
+RUN (/usr/bin/AdskLicensingService --run &) && /opt/Autodesk/AdskLicensing/Current/helper/AdskLicensingInstHelper register -pk 657P1 -pv 2024.0.0.F -el EN_US -cf /var/opt/Autodesk/Adlm/Maya2024/MayaConfig.pit
+
+# get and install libXp6
+RUN wget https://launchpad.net/~zeehio/+archive/ubuntu/libxp/+files/libxp6_1.0.2-2ubuntu1~22.04_amd64.deb
+RUN apt-get install ./libxp6_1.0.2-2ubuntu1~22.04_amd64.deb
+
+# add additional dependencies
+RUN apt-get install -y libfam0 libcurl4 libpcre16-3 libjpeg62 libxm4 libgdbm-compat4 libmng2 libaudiofile-dev xfonts-100dpi xfonts-75dpi
+RUN apt-get install -y --reinstall libxcb-xinerama0
+RUN ln -s /usr/lib/x86_64-linux-gnu/libgdbm_compat.so.4 /usr/autodesk/maya2024/lib/libgdbm.so.4
+RUN ln -s /usr/lib/x86_64-linux-gnu/libmng.so.2 /usr/autodesk/maya2024/lib/libmng.so.1
+#RUN xset +fp /usr/share/fonts/X11/100dpi
+#RUN xset +fp /usr/share/fonts/X11/75dpi
+#RUN xset fp rehash
+
+# install libffi6
+RUN wget -O libffi6.deb http://archive.ubuntu.com/ubuntu/pool/main/libf/libffi/libffi6_3.2.1-8_amd64.deb 
+RUN apt-get install ./libffi6.deb
+
+# install libpng15
+WORKDIR /tmp
+RUN wget https://sourceforge.net/projects/libpng/files/libpng15/older-releases/1.5.15/libpng-1.5.15.tar.gz
+RUN tar -zxvf ./libpng-1.5.15.tar.gz
+WORKDIR libpng-1.5.15
+RUN ./configure --prefix=/usr/local/libpng
+RUN make check
+RUN make install
+RUN make check
+RUN ln -s /usr/local/libpng/lib/libpng15.so.15 /usr/autodesk/maya2024/lib/libpng15.so.15
+
+# set environent variables
+RUN mkdir -p ~/maya/2024/ && touch ~/maya/2024/Maya.env
+RUN echo "MAYA_DISABLE_ADP=1" >> ~/maya/2024/Maya.env
+RUN echo "LC_ALL=C" >> ~/maya/2024/Maya.env
+
+RUN apt install -y libglu1-mesa libxi-dev libxmu-dev libglu1-mesa-dev libxinerama1 libnss3 libxcomposite-dev libxcomposite-dev libxdamage1 libxrandr2 libxtst6 libx11-xcb1 libxcb-icccm4 libxcb-icccm4 libxcb-keysyms1 libxcb-randr0 libxcb-shape0 libxcb-sync-dev libxcb-xfixes0 libxcb-xinerama0 libxcb-xkb-dev libxkbcommon-x11-0 libgl1-mesa-dev libpci-dev libasound2
+RUN apt install -y x11-apps
+#RUN apt update
+#RUN apt install -y tree
+RUN apt install -y libqt5gui5
+#RUN apt install -y --allow-unauthenticated nvidia-driver-550
+# start maya
+# (/opt/Autodesk/AdskLicensing/13.0.0.8122/AdskLicensingAgent/AdskLicensingAgent -i 47f45fc9-a7ec-4a40-47fb-90922a6fa230 --no-gui -c 2 &) ; /usr/bin/AdskLicensingService --run &
+#
+#RUN maya
+
+# run on host system
+#
+# # install nvidia toolkit
+# sudo apt intall nvidia-container-toolkit
+# #or
+# sudo pamac install nvidia-container-toolkit
+# sudo systemctl restart docker
+# 
+# # give control to xserver
+# xhost +local:$USER
+#
+# god had no hand in this
+# sudo docker run -it --rm --privileged --cap-add SYS_ADMIN --security-opt seccomp=unconfined --cgroup-parent=docker.slice --cgroupns private --tmpfs /tmp --tmpfs /run --tmpfs /run/lock      -v /tmp/.X11-unix:/tmp/.X11-unix     -v /root/.Xauthority:/root/.Xauthority:rw --entrypoint /bin/bash --net=host     -e DISPLAY     -v ${HOME}/.Xauthority:/home/user/.Xauthority maya:2024
+
+
+
+
+
