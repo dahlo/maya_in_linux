@@ -1,0 +1,74 @@
+FROM nvidia/cuda:12.4.0-runtime-rockylinux9
+
+# create dir
+RUN mkdir install
+WORKDIR /install
+
+# install initial deps
+RUN dnf install -y wget
+
+# download  maya 2025
+RUN wget --no-check-certificate -O maya.tgz https://efulfillment.autodesk.com/NetSWDLD/2025/MAYA/1AAEB4DA-FE7D-3C8A-A4F4-C217F55C55BA/ESD/Autodesk_Maya_2025_Linux_64bit.tgz
+
+# unpack
+RUN tar -xzvf maya.tgz
+
+# enable epel
+RUN dnf install -y 'dnf-command(config-manager)'
+RUN dnf config-manager --set-enabled crb
+RUN dnf install -y epel-release
+RUN dnf clean all
+
+# update system
+RUN dnf update -y
+
+# installer needs libnsl
+RUN dnf install -y libnsl
+
+# install additional deps
+
+# General Packages
+RUN dnf install -y glibc libSM libICE zlib openssl-libs nss dbus # lsb-core libpcre16
+RUN dnf install -y lsb_release # instead of lsb-core
+RUN dnf install -y  libpcre16.so.0 # instead of libpcre16
+
+# Multimedia Packages
+RUN dnf install -y mesa-libGLU mesa-libGLw audiofile-devel e2fsprogs-libs libcap libdrm libmng flite speech-dispatcher cups libpng15 # gamin
+# RUN dnf install -y   # instead of gamin
+
+
+# X Window – Xcb – X11 Packages
+RUN dnf install -y libXau libXcomposite libXcursor libXext libXfixes libXi libXmu libXp libXrandr libXrender libXScrnSaver libxshmfence libXt libXtst libXinerama libxcb xcb-util xcb-util-wm xcb-util-image xcb-util-keysyms xcb-util-renderutil libxkbcommon libxkbcommon-x11 libX11
+
+# Fonts
+RUN dnf install -y fontconfig freetype xorg-x11-fonts-ISO8859-1-75dpi xorg-x11-fonts-ISO8859-1-100dpi liberation-mono-fonts liberation-fonts-common liberation-sans-fonts liberation-serif-fonts
+
+# additional deps not mentioned in the official guide
+RUN dnf install -y libpng15 libpcre16.so.0 libGLU.so.1 libGLU xorg-x11-fonts-ISO8859-1-100dpi xorg-x11-fonts-ISO8859-1-75dpi libglvnd-opengl xcb-util-cursor
+
+# install licensing
+WORKDIR /install/Packages
+RUN dnf install -y Licensing/adskidentitymanager1.11.10.1-1.x86_64.rpm adsklicensing14.0.0.10163-0-0.x86_64.rpm adskflexnetclient-11.18.0-0.x86_64.rpm adskflexnetserverIPV6-11.19.4-1.x86_64.rpm adlmapps29-29.0.2-0.x86_64.rpm
+
+# install maya
+RUN (/usr/bin/AdskLicensingService --run &) && dnf install -y Maya2025_64-2025.0-1192.x86_64.rpm
+
+# register in the license server
+#RUN (/usr/bin/AdskLicensingService --run &) && /opt/Autodesk/AdskLicensing/Current/helper/AdskLicensingInstHelper register -pk 657Q1 -pv 2025.0.0.F -el EN_US -cf /install/MayaConfig.pit
+
+# install extra packages
+RUN dnf install -y Bifrost2025-2.9.0.0-2.9.0.0-1.x86_64.rpm AdobeSubstance3DforMaya-2.5.0-2025-linux-x86_64.rpm 
+RUN (/usr/bin/AdskLicensingService --run &) && ./unix_installer.sh
+
+# install additional deps
+RUN dnf install -y libXpm pciutils-libs libxkbfile
+
+# run maya
+#xhost +local:docker
+# or
+#xhost +local:$USER
+#sudo docker run -it --rm --gpus=all -e DISPLAY -v "$HOME/.Xauthority:/root/.Xauthority:rw" -v /tmp/.X11-unix:/tmp/.X11-unix maya:2025
+
+# (/opt/Autodesk/AdskLicensing/14.0.0.10163/AdskLicensingAgent/AdskLicensingAgent -i 9be5a8a9-d1d8-4be4-b4c7-e3935f1e6607 --no-gui -c 2 &) ; /usr/bin/AdskLicensingService --run &
+
+

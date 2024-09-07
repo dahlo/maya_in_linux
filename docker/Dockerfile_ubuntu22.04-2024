@@ -111,6 +111,6 @@ RUN apt install -y libqt5gui5
 # sudo docker run -it --rm --privileged --cap-add SYS_ADMIN --security-opt seccomp=unconfined --cgroup-parent=docker.slice --cgroupns private --tmpfs /tmp --tmpfs /run --tmpfs /run/lock      -v /tmp/.X11-unix:/tmp/.X11-unix     -v /root/.Xauthority:/root/.Xauthority:rw --entrypoint /bin/bash --net=host     -e DISPLAY     -v ${HOME}/.Xauthority:/home/user/.Xauthority maya:2024
 
 
-
+# (/opt/Autodesk/AdskLicensing/14.0.0.10163/AdskLicensingAgent/AdskLicensingAgent -i 9be5a8a9-d1d8-4be4-b4c7-e3935f1e6607 --no-gui -c 2 &) ; /usr/bin/AdskLicensingService --run &
 
 
