@@ -47,6 +47,35 @@ On the ubuntu based docker image, it fails because it can't find WebView2, a Mic
 
 The Rocky based image times out when trying to connect to the licensing server. Will have to dig deeper and see if there are any system packages or services that differ compared to the VM based install that works.
 
+```bash
 
+# install nvidia toolkit                                                                
+sudo apt intall nvidia-container-toolkit
+# or, depening on your host os
+sudo pamac install nvidia-container-toolkit
+sudo systemctl restart docker
+
+# go to the docker folder
+cd docker
+
+# build the image, adjust tag and dockerfile if needed
+docker buildx build --progress=plain -t maya:2025 -f Dockerfile_rocky9.3-2025 .
+
+# enable access to the xserver from the container
+xhost +local:docker
+# and/or? have to check later
+xhost +local:$USER
+
+# start the image, adjust tag if needed
+docker run -it --rm --gpus=all -e DISPLAY -v "$HOME/.Xauthority:/root/.Xauthority:rw" -v /tmp/.X11-unix:/tmp/.X11-unix maya:2025
+
+### inside the container
+
+# start the licensing server
+(/opt/Autodesk/AdskLicensing/14.0.0.10163/AdskLicensingAgent/AdskLicensingAgent -i 9be5a8a9-d1d8-4be4-b4c7-e3935f1e6607 --no-gui -c 2 &) ; /usr/bin/AdskLicensingService --run &
+
+# start maya
+maya
+```
 
 
