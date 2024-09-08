@@ -9,7 +9,7 @@ Here i have collected notes and materials for getting Maya with GUI to run in Li
 | &#9989;  | VM Rocky 9.3 - Maya 2025 | Starts |
 | &#9989;  | VM Ubuntu 22.04 - Maya 2024 | Starts |
 | &#10060; | VM Ubuntu 22.04 - Maya 2025 | Fails, can't find WebView2 at login |
-| &#10060; | Docker Ubuntu 22.04 - Maya 2025 | Fails, have to check why |
+| &#10060; | Docker Ubuntu 22.04 - Maya 2024 | Fails, have to check why |
 | &#10060; | Docker Rocky 9.3 - Maya 2025 | Fails, some kind of timeout |
 
 
