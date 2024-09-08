@@ -35,6 +35,13 @@ qemu-system-x86_64 -drive "file=Rocky-9.3-MATE-x86_64-20240217.0.img.qcow2,forma
 
 Once in the VM, run the script from this repo that is associated to the OS and Maya combination you want, and it should install everything needed to start Maya.
 
+```bash
+# get this repo
+git clone https://github.com/dahlo/maya_in_linux.git
+
+# run the file
+bash script.sh
+```
 
 
 ## Docker based
